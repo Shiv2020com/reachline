@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reachline — Advertising, at Every Depth</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --surface: #0B1220;
+    --surface-alt: #121B2E;
+    --border: #24314A;
+    --accent: #4FE3D0;
+    --accent-dim: #1F8A7D;
+    --accent-bright: #8FFCEA;
+    --text: #E8F1F6;
+    --text-muted: #8393A8;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:#020208;
+    color:var(--text);
+    font-family:'Manrope',sans-serif;
+    line-height:1.65;
+    overflow-x:hidden;
+  }
+  h1,h2,h3,h4{font-family:'Cormorant Garamond', serif; font-weight:500;}
+  em{font-style:italic; color:var(--accent-bright);}
+  a{color:inherit; text-decoration:none;}
+  .container{max-width:1180px; margin:0 auto; padding:0 28px; position:relative; z-index:2;}
+  ::selection{background:var(--accent); color:#02080a;}
+  a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible, .chip:focus-visible{
+    outline:1px solid var(--accent-bright); outline-offset:3px;
+  }
+
+  /* Scroll-driven ocean background, only behind the home dive */
+  #oceanBg{
+    position:fixed; inset:0; z-index:0;
+    background:linear-gradient(to bottom, #BEEFFF, #2E86C1);
+    transition:background .05s linear;
+  }
+  .particles{position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:1;}
+  .particle{
+    position:absolute; width:3px; height:3px; border-radius:50%;
+    background:var(--accent); box-shadow:0 0 6px 1px rgba(79,227,208,0.8);
+    animation:drift 14s linear infinite;
+    opacity:0.7;
+  }
+  @keyframes drift{
+    0%{transform:translateY(0) translateX(0); opacity:0;}
+    10%{opacity:0.8;}
+    90%{opacity:0.6;}
+    100%{transform:translateY(-620px) translateX(20px); opacity:0;}
+  }
+  @media(prefers-reduced-motion: reduce){
+    .particle{animation:none; opacity:0.3;}
+    html{scroll-behavior:auto;}
+  }
+
+  /* NAV */
+  header{
+    position:fixed; top:0; left:0; right:0; z-index:200;
+    background:rgba(4,8,14,0.55); backdrop-filter:blur(14px);
+    border-bottom:1px solid rgba(255,255,255,0.08);
+  }
+  nav{max-width:1180px; margin:0 auto; padding:18px 28px; display:flex; align-items:center; justify-content:space-between;}
+  .logo{font-family:'Cormorant Garamond', serif; font-size:23px; font-weight:600; letter-spacing:0.02em; display:flex; align-items:center; gap:10px;}
+  .logo .mark{
+    width:30px; height:30px; border:1px solid var(--accent); border-radius:50%;
+    display:flex; align-items:center; justify-content:center; font-size:13px; color:var(--accent-bright);
+    font-family:'Cormorant Garamond'; font-style:italic; box-shadow:0 0 12px rgba(79,227,208,0.35);
+  }
+  .navlinks{display:flex; gap:32px; align-items:center;}
+  .navlinks a{font-size:13px; color:rgba(255,255,255,0.75); font-weight:500; letter-spacing:0.03em; text-transform:uppercase; cursor:pointer; transition:color .2s;}
+  .navlinks a:hover, .navlinks a.active{color:var(--accent-bright);}
+  .nav-cta{
+    background:transparent; color:var(--accent-bright); padding:10px 22px; border-radius:999px;
+    font-size:12px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; cursor:pointer;
+    border:1px solid var(--accent-dim); transition:.25s;
+  }
+  .nav-cta:hover{background:var(--accent); color:#02080a; border-color:var(--accent);}
+  .menu-btn{display:none; background:none; border:none; color:var(--text); font-size:22px; cursor:pointer;}
+
+  /* Depth gauge */
+  #depthGauge{
+    position:fixed; right:22px; top:50%; transform:translateY(-50%); z-index:150;
+    display:flex; flex-direction:column; align-items:center; gap:10px;
+  }
+  #depthGauge .rail{width:2px; height:220px; background:rgba(255,255,255,0.18); position:relative; border-radius:2px;}
+  #depthGauge .fill{position:absolute; top:0; left:0; width:100%; background:var(--accent); border-radius:2px; box-shadow:0 0 8px var(--accent);}
+  #depthGauge .label{
+    font-family:'Cormorant Garamond'; font-style:italic; font-size:14px; color:var(--accent-bright);
+    background:rgba(2,8,14,0.55); padding:4px 10px; border-radius:999px; border:1px solid rgba(79,227,208,0.3);
+    white-space:nowrap;
+  }
+  @media(max-width:900px){ #depthGauge{display:none;} }
+
+  /* DIVE sections */
+  .dive-section{
+    min-height:100vh; display:flex; align-items:center; position:relative; padding:140px 0 100px;
+  }
+  .depth-tag{
+    font-family:'Cormorant Garamond'; font-style:italic; font-size:15px; color:var(--accent-bright);
+    display:inline-flex; align-items:center; gap:10px; margin-bottom:20px;
+    border:1px solid rgba(79,227,208,0.35); padding:6px 16px; border-radius:999px;
+    background:rgba(2,8,14,0.35);
+  }
+  .dive-h{font-size:clamp(32px,4.6vw,54px); line-height:1.1; margin-bottom:22px; color:#fff;
+    text-shadow:0 2px 24px rgba(0,0,0,0.4);}
+  .dive-p{font-size:17px; color:rgba(232,241,246,0.85); max-width:520px; margin-bottom:30px;}
+
+  .glass-card{
+    background:rgba(3,10,16,0.42); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.12);
+    border-radius:10px; padding:28px;
+  }
+  .cards-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:18px; width:100%;}
+  .cards-grid.two{grid-template-columns:repeat(2,1fr); max-width:760px;}
+  .glass-card .icon{
+    width:38px; height:38px; border-radius:50%; border:1px solid var(--accent-dim);
+    display:flex; align-items:center; justify-content:center; font-family:'Cormorant Garamond'; font-style:italic;
+    color:var(--accent-bright); font-size:15px; margin-bottom:16px;
+  }
+  .glass-card h3{font-size:19px; color:#fff; margin-bottom:8px; font-weight:500;}
+  .glass-card p{font-size:13.5px; color:rgba(232,241,246,0.75);}
+
+  .hero-actions{display:flex; gap:16px; flex-wrap:wrap;}
+  .btn-primary{
+    background:var(--accent); color:#02080a; padding:15px 30px; border-radius:2px; font-weight:700;
+    font-size:12.5px; letter-spacing:0.08em; text-transform:uppercase; border:1px solid var(--accent); cursor:pointer;
+    transition:.25s;
+  }
+  .btn-primary:hover{background:transparent; color:var(--accent-bright);}
+  .btn-secondary{
+    background:transparent; color:#fff; padding:15px 30px; border-radius:2px; font-weight:600;
+    font-size:12.5px; letter-spacing:0.08em; text-transform:uppercase; border:1px solid rgba(255,255,255,0.35); cursor:pointer;
+    transition:.25s;
+  }
+  .btn-secondary:hover{border-color:var(--accent); color:var(--accent-bright);}
+
+  /* Zone 4: midnight stats */
+  .stat-row{display:flex; gap:50px; flex-wrap:wrap;}
+  .stat b{font-family:'Cormorant Garamond'; font-size:38px; color:var(--accent-bright); display:block; font-weight:500;}
+  .stat span{font-size:12px; color:rgba(232,241,246,0.6); text-transform:uppercase; letter-spacing:0.08em;}
+
+  /* Zone 5: abyss focal glow */
+  .abyss-focal{
+    position:absolute; left:50%; top:8%; transform:translateX(-50%);
+    width:180px; height:180px; border-radius:50%;
+    background:radial-gradient(circle, rgba(79,227,208,0.55), rgba(79,227,208,0.08) 60%, transparent 75%);
+    filter:blur(4px); animation:pulseGlow 5s ease-in-out infinite; z-index:1;
+  }
+  @keyframes pulseGlow{0%,100%{opacity:0.6; transform:translateX(-50%) scale(1);} 50%{opacity:1; transform:translateX(-50%) scale(1.12);}}
+  @media(prefers-reduced-motion: reduce){ .abyss-focal{animation:none;} }
+  .abyss-content{position:relative; z-index:2; text-align:center; max-width:640px; margin:0 auto;}
+
+  /* CALM PAGES (About, Why, Privacy, Contact, Services, Advertisers, Creators) */
+  .calm-page{
+    background:linear-gradient(180deg, #060B14, #0B1220 60%);
+    min-height:100vh;
+  }
+  .calm-page .container{padding-top:150px; padding-bottom:100px;}
+  .section-head{max-width:600px; margin-bottom:50px;}
+  .section-head h2{font-size:clamp(28px,3.4vw,42px); color:#fff;}
+  .eyebrow{
+    font-family:'Cormorant Garamond'; font-style:italic; font-size:18px; color:var(--accent);
+    margin-bottom:16px; display:flex; align-items:center; gap:12px;
+  }
+  .eyebrow::before{content:''; width:30px; height:1px; background:var(--accent-dim);}
+  .services-grid-calm{display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--border); border:1px solid var(--border);}
+  .service-card{background:var(--surface); padding:34px 30px;}
+  .service-card:hover{background:var(--surface-alt);}
+  .service-card .icon{
+    width:38px; height:38px; border-radius:50%; border:1px solid var(--accent-dim);
+    display:flex; align-items:center; justify-content:center; font-family:'Cormorant Garamond'; font-style:italic;
+    color:var(--accent); font-size:15px; margin-bottom:18px;
+  }
+  .service-card h3{font-size:20px; color:#fff; margin-bottom:8px; font-weight:500;}
+  .service-card p{font-size:13.5px; color:var(--text-muted);}
+
+  .why-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:1px; background:var(--border); border:1px solid var(--border);}
+  .why-card{background:var(--surface); padding:36px 34px;}
+  .why-card h3{font-size:21px; color:var(--accent-bright); margin-bottom:10px; font-weight:500;}
+  .why-card p{font-size:14px; color:var(--text-muted);}
+
+  .form-wrap{background:var(--surface); border:1px solid var(--border); padding:42px; max-width:640px;}
+  .form-row{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;}
+  .form-row.full{grid-template-columns:1fr;}
+  label{font-size:12px; color:var(--text-muted); display:block; margin-bottom:7px; text-transform:uppercase; letter-spacing:0.06em;}
+  input, select, textarea{
+    width:100%; background:#060B14; border:1px solid var(--border); border-radius:4px;
+    padding:12px 14px; color:var(--text); font-family:'Manrope'; font-size:14px;
+  }
+  input:focus, select:focus, textarea:focus{border-color:var(--accent-dim);}
+  input::placeholder, textarea::placeholder{color:#4b5871;}
+  textarea{resize:vertical; min-height:100px;}
+  .checkbox-group{display:flex; flex-wrap:wrap; gap:10px; margin-top:8px;}
+  .chip{border:1px solid var(--border); border-radius:999px; padding:9px 18px; font-size:13px; cursor:pointer; color:var(--text-muted); transition:.2s;}
+  .chip.selected{background:var(--accent); border-color:var(--accent); color:#02080a; font-weight:700;}
+  .submit-note{font-size:12.5px; color:var(--text-muted); margin-top:16px;}
+  .success-box{display:none; background:rgba(79,227,208,0.08); border:1px solid var(--accent-dim); border-radius:4px; padding:18px; font-size:14px; margin-top:18px;}
+
+  .legal h2{font-size:32px; color:#fff; margin-bottom:20px;}
+  .legal h3{font-size:19px; margin:28px 0 10px; color:var(--accent-bright); font-weight:500;}
+  .legal p, .legal li{color:var(--text-muted); font-size:14.5px; margin-bottom:10px;}
+  .legal ul{padding-left:20px;}
+
+  footer{border-top:1px solid var(--border); padding:60px 0 32px; background:var(--surface);}
+  .footer-grid{display:grid; grid-template-columns:2fr 1fr 1fr 1fr; gap:40px; margin-bottom:40px;}
+  .footer-grid h4{font-size:12px; color:var(--accent-dim); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:16px;}
+  .footer-grid a{display:block; font-size:14px; color:var(--text); margin-bottom:10px; opacity:0.85;}
+  .footer-grid a:hover{opacity:1; color:var(--accent-bright);}
+  .footer-bottom{border-top:1px solid var(--border); padding-top:22px; display:flex; justify-content:space-between; font-size:13px; color:var(--text-muted); flex-wrap:wrap; gap:12px;}
+
+  .page{display:none;}
+  .page.active{display:block;}
+
+  @media(max-width:900px){
+    .cards-grid{grid-template-columns:1fr 1fr;}
+    .services-grid-calm{grid-template-columns:1fr 1fr;}
+    .why-grid{grid-template-columns:1fr;}
+    .footer-grid{grid-template-columns:1fr 1fr;}
+    .form-row{grid-template-columns:1fr;}
+  }
+  @media(max-width:640px){
+    .navlinks{position:fixed; top:64px; left:0; right:0; background:#050a12; flex-direction:column; padding:20px 28px; border-bottom:1px solid var(--border); display:none; gap:18px;}
+    .navlinks.open{display:flex;}
+    .menu-btn{display:block;}
+    .cards-grid{grid-template-columns:1fr;}
+    .services-grid-calm{grid-template-columns:1fr;}
+    .dive-section{padding:120px 0 70px;}
+  }
+</style>
+</head>
+<body>
+
+<div id="oceanBg"></div>
+
+<header>
+  <nav>
+    <div class="logo"><span class="mark">R</span>Reachline</div>
+    <div class="navlinks" id="navlinks">
+      <a data-page="home">Home</a>
+      <a data-page="services">Services</a>
+      <a data-page="advertisers">For Advertisers</a>
+      <a data-page="creators">For Creators</a>
+      <a data-page="about">About Us</a>
+      <a data-page="why">Why Us</a>
+      <a data-page="contact">Contact</a>
+    </div>
+    <button class="nav-cta" data-page="advertisers">Start a Campaign</button>
+    <button class="menu-btn" id="menuBtn">☰</button>
+  </nav>
+</header>
+
+<div id="depthGauge">
+  <span class="label" id="depthLabel">0m · Surface</span>
+  <div class="rail"><div class="fill" id="depthFill" style="height:0%"></div></div>
+</div>
+
+<!-- HOME: THE DIVE -->
+<div class="page active" id="page-home">
+
+  <section class="dive-section" id="zone-surface">
+    <div class="container">
+      <div class="depth-tag">◉ 0m · Surface</div>
+      <h1 class="dive-h">Your brand, reaching <em>every</em> depth of the internet.</h1>
+      <p class="dive-p">Reachline plans and places your advertising across Facebook, Google, YouTube creators, Instagram, and search — one team, one dashboard, one invoice. Scroll to see how far we go.</p>
+      <div class="hero-actions">
+        <button class="btn-primary" data-page="advertisers">Get a media plan</button>
+        <button class="btn-secondary" data-page="creators">Join as a creator</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="dive-section" id="zone-shallow">
+    <div class="container">
+      <div class="depth-tag">◉ 20m · Shallow Waters</div>
+      <h2 class="dive-h" style="font-size:clamp(28px,3.6vw,42px);">The channels everyone can see.</h2>
+      <p class="dive-p">Close to the surface, in full daylight — the paid and creator channels your customers scroll past every day.</p>
+      <div class="cards-grid">
+        <div class="glass-card"><div class="icon">F</div><h3>Facebook Ads</h3><p>Direct campaigns on Meta's ad platform, targeted and optimized daily.</p></div>
+        <div class="glass-card"><div class="icon">G</div><h3>Google Ads</h3><p>Search, display, and shopping campaigns built on real purchase intent.</p></div>
+        <div class="glass-card"><div class="icon">Y</div><h3>YouTube Sponsorships</h3><p>Placements with vetted YouTubers whose audience matches your product.</p></div>
+        <div class="glass-card"><div class="icon">I</div><h3>Instagram Promotion</h3><p>Feed, Reels, and Story placements with creators and brand pages.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="dive-section" id="zone-twilight">
+    <div class="container">
+      <div class="depth-tag">◉ 200m · Twilight Zone</div>
+      <h2 class="dive-h" style="font-size:clamp(28px,3.6vw,42px);">Where the real work happens, out of sight.</h2>
+      <p class="dive-p">Light fades here — this is the technical layer that keeps growth going long after a campaign ends.</p>
+      <div class="cards-grid two">
+        <div class="glass-card"><div class="icon">L</div><h3>Backlink Building</h3><p>Editorial links from relevant sites to strengthen domain authority.</p></div>
+        <div class="glass-card"><div class="icon">S</div><h3>Search Engine Optimization</h3><p>On-page, technical, and content SEO to grow organic search traffic.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="dive-section" id="zone-midnight">
+    <div class="particles" id="midnightParticles"></div>
+    <div class="container">
+      <div class="depth-tag">◉ 1000m · Midnight Zone</div>
+      <h2 class="dive-h" style="font-size:clamp(28px,3.6vw,42px);">Why businesses stay with Reachline.</h2>
+      <p class="dive-p">No sunlight down here — only the numbers that matter.</p>
+      <div class="stat-row">
+        <div class="stat"><b>6</b><span>Channels managed</span></div>
+        <div class="stat"><b>120+</b><span>Active advertisers</span></div>
+        <div class="stat"><b>300+</b><span>Partner creators</span></div>
+        <div class="stat"><b>48h</b><span>Avg. turnaround</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="dive-section" id="zone-abyss">
+    <div class="abyss-focal"></div>
+    <div class="particles" id="abyssParticles"></div>
+    <div class="container abyss-content">
+      <div class="depth-tag" style="margin:0 auto 20px;">◉ The Abyss · Deepest Point</div>
+      <h2 class="dive-h" style="font-size:clamp(30px,4vw,48px);">The one decision that starts everything.</h2>
+      <p class="dive-p" style="margin:0 auto 34px;">Whether you're a business ready to advertise, or a creator ready to be found — this is where it begins.</p>
+      <div class="hero-actions" style="justify-content:center;">
+        <button class="btn-primary" data-page="advertisers">I want to advertise</button>
+        <button class="btn-secondary" data-page="creators">I'm a creator</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- SERVICES -->
+<section class="page calm-page" id="page-services">
+  <div class="container">
+    <div class="section-head">
+      <div class="eyebrow">Services</div>
+      <h2>Full-funnel advertising, broken down.</h2>
+    </div>
+    <div class="services-grid-calm">
+      <div class="service-card"><div class="icon">F</div><h3>Facebook Ads</h3><p>Campaign structure, audience targeting, creative testing, and daily optimization on Meta Ads Manager.</p></div>
+      <div class="service-card"><div class="icon">G</div><h3>Google Ads</h3><p>Search, Display, and Shopping campaigns focused on keywords and audiences that convert.</p></div>
+      <div class="service-card"><div class="icon">Y</div><h3>YouTube Sponsorships</h3><p>Sponsored integrations and dedicated videos with creators from our vetted network.</p></div>
+      <div class="service-card"><div class="icon">P</div><h3>Facebook Page Promotion</h3><p>Sponsored posts on established Pages with real, engaged, niche-relevant audiences.</p></div>
+      <div class="service-card"><div class="icon">I</div><h3>Instagram Promotion</h3><p>Reels, Stories, and feed posts placed with creators and brand accounts that fit your niche.</p></div>
+      <div class="service-card"><div class="icon">L</div><h3>Backlink Service</h3><p>Relevant, editorial backlinks from real websites to support your domain's search authority.</p></div>
+      <div class="service-card"><div class="icon">S</div><h3>SEO Service</h3><p>Technical fixes, on-page optimization, and content that targets the searches your customers use.</p></div>
+      <div class="service-card"><div class="icon">M</div><h3>Media Planning</h3><p>A single cross-channel plan so your budget is spent where it returns the most.</p></div>
+      <div class="service-card"><div class="icon">R</div><h3>Reporting</h3><p>Weekly and monthly reports that explain performance in plain language, not raw data exports.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ADVERTISERS -->
+<section class="page calm-page" id="page-advertisers">
+  <div class="container">
+    <div class="section-head">
+      <div class="eyebrow">For advertisers</div>
+      <h2>Tell us about your business. We'll come back with a plan.</h2>
+    </div>
+    <form class="form-wrap" id="advertiserForm">
+      <div class="form-row">
+        <div><label for="a-name">Full name</label><input id="a-name" required placeholder="Your name"></div>
+        <div><label for="a-company">Business name</label><input id="a-company" required placeholder="Your business"></div>
+      </div>
+      <div class="form-row">
+        <div><label for="a-email">Email</label><input id="a-email" type="email" required placeholder="you@business.com"></div>
+        <div><label for="a-phone">Phone / WhatsApp</label><input id="a-phone" required placeholder="+880..."></div>
+      </div>
+      <div class="form-row full">
+        <div>
+          <label>Which channels are you interested in?</label>
+          <div class="checkbox-group" id="channelChips">
+            <div class="chip">Facebook Ads</div>
+            <div class="chip">Google Ads</div>
+            <div class="chip">YouTube Sponsorship</div>
+            <div class="chip">Facebook Page Promotion</div>
+            <div class="chip">Instagram Promotion</div>
+            <div class="chip">Backlinks</div>
+            <div class="chip">SEO</div>
+          </div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div><label for="a-budget">Monthly budget (approx.)</label>
+          <select id="a-budget">
+            <option>Under $200</option>
+            <option>$200 – $500</option>
+            <option>$500 – $1,500</option>
+            <option>$1,500+</option>
+          </select>
+        </div>
+        <div><label for="a-website">Website / Page link (optional)</label><input id="a-website" placeholder="https://"></div>
+      </div>
+      <div class="form-row full">
+        <div><label for="a-notes">Tell us about your goal</label><textarea id="a-notes" placeholder="e.g. drive sales for our online store"></textarea></div>
+      </div>
+      <button type="submit" class="btn-primary">Request my media plan</button>
+      <p class="submit-note">We reply within one business day with a channel recommendation and estimated budget.</p>
+      <div class="success-box" id="a-success">Thanks — your request has been noted. Our team will reach out at the email or phone you provided.</div>
+    </form>
+  </div>
+</section>
+
+<!-- CREATORS -->
+<section class="page calm-page" id="page-creators">
+  <div class="container">
+    <div class="section-head">
+      <div class="eyebrow">For creators & page owners</div>
+      <h2>Join the Recommendation Book and get matched with advertisers.</h2>
+    </div>
+    <form class="form-wrap" id="creatorForm">
+      <div class="form-row">
+        <div><label for="c-name">Full name</label><input id="c-name" required placeholder="Your name"></div>
+        <div><label for="c-channel">Channel / Page name</label><input id="c-channel" required placeholder="e.g. Your YouTube channel"></div>
+      </div>
+      <div class="form-row">
+        <div><label for="c-platform">Primary platform</label>
+          <select id="c-platform">
+            <option>YouTube</option>
+            <option>Facebook Page</option>
+            <option>Instagram</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div><label for="c-followers">Audience size</label>
+          <select id="c-followers">
+            <option>Under 5,000</option>
+            <option>5,000 – 20,000</option>
+            <option>20,000 – 100,000</option>
+            <option>100,000+</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div><label for="c-email">Email</label><input id="c-email" type="email" required placeholder="you@email.com"></div>
+        <div><label for="c-link">Channel / Page link</label><input id="c-link" required placeholder="https://"></div>
+      </div>
+      <div class="form-row full">
+        <div><label for="c-niche">What's your content about?</label><textarea id="c-niche" placeholder="e.g. tech reviews, cooking, lifestyle vlogs"></textarea></div>
+      </div>
+      <button type="submit" class="btn-primary">Apply to the Recommendation Book</button>
+      <p class="submit-note">Listing is free. We review every application and only list active, genuine audiences.</p>
+      <div class="success-box" id="c-success">Thanks — your application is in review. We'll email you once it's approved.</div>
+    </form>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section class="page calm-page" id="page-about">
+  <div class="container legal" style="max-width:760px;">
+    <div class="eyebrow">About us</div>
+    <h2>We connect brands to the audiences already paying attention.</h2>
+    <p>Reachline was built on a simple observation: growing a business today means being visible across several platforms at once, and most business owners don't have time to learn the ad manager, find the right creators, and track results across all of them separately.</p>
+    <p>We sit in the middle. On one side, businesses that want to reach real customers through Facebook, Google, YouTube, Instagram, and organic search. On the other, creators and page owners with real, engaged audiences. We plan the media, place the campaigns, vet the creators, and report back in plain language.</p>
+    <h3>What we do</h3>
+    <p>We manage paid advertising directly on Facebook and Google, place sponsorships with YouTubers and Facebook Page owners in our network, run Instagram promotions, and provide backlink and SEO services to grow organic traffic over time.</p>
+    <h3>Who we work with</h3>
+    <p>Small and mid-sized businesses that want a single team managing their advertising, and creators or page owners who want consistent, well-matched sponsorship opportunities instead of chasing one-off deals.</p>
+  </div>
+</section>
+
+<!-- WHY -->
+<section class="page calm-page" id="page-why">
+  <div class="container">
+    <div class="section-head">
+      <div class="eyebrow">Why Reachline</div>
+      <h2>Fewer vendors. Clearer numbers. Faster answers.</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why-card"><h3>One team, every channel</h3><p>Instead of separate freelancers for Facebook, Google, and creator outreach, one team plans and runs all of it together, so the strategy is consistent.</p></div>
+      <div class="why-card"><h3>Vetted creator network</h3><p>Every YouTuber and Page owner in our Recommendation Book is reviewed for real, active audiences before we recommend them to an advertiser.</p></div>
+      <div class="why-card"><h3>Plain-language reporting</h3><p>You get a short, readable report on what happened and what we're changing next — not a raw spreadsheet export.</p></div>
+      <div class="why-card"><h3>No long lock-in</h3><p>Campaigns are reviewed monthly. We keep your business by delivering results, not by binding you to a long contract.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- PRIVACY -->
+<section class="page calm-page" id="page-privacy">
+  <div class="container legal" style="max-width:760px;">
+    <div class="eyebrow">Privacy policy</div>
+    <h2>Privacy Policy</h2>
+    <p>Last updated: July 2026. This policy explains what information Reachline collects through this website and how it is used.</p>
+    <h3>Information we collect</h3>
+    <ul>
+      <li>Contact details you submit through our forms: name, email, phone number, business or channel name.</li>
+      <li>Campaign details you share: budget range, goals, channel links, and audience size.</li>
+      <li>Basic usage data such as pages visited, collected to understand how the site is used.</li>
+    </ul>
+    <h3>How we use it</h3>
+    <ul>
+      <li>To respond to advertiser and creator inquiries submitted through this site.</li>
+      <li>To prepare media plans, match creators with advertisers, and manage active campaigns.</li>
+      <li>To send updates about a submitted inquiry or an active campaign.</li>
+    </ul>
+    <h3>What we don't do</h3>
+    <p>We do not sell contact details to third parties. Information shared by advertisers is not shared with creators, or with other advertisers, without consent.</p>
+    <h3>Your choices</h3>
+    <p>You can request that we delete your submitted information at any time by contacting us through the Contact page.</p>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section class="page calm-page" id="page-contact">
+  <div class="container">
+    <div class="section-head">
+      <div class="eyebrow">Contact</div>
+      <h2>Have a question before you apply?</h2>
+    </div>
+    <form class="form-wrap" id="contactForm">
+      <div class="form-row">
+        <div><label for="k-name">Name</label><input id="k-name" required placeholder="Your name"></div>
+        <div><label for="k-email">Email</label><input id="k-email" type="email" required placeholder="you@email.com"></div>
+      </div>
+      <div class="form-row full">
+        <div><label for="k-msg">Message</label><textarea id="k-msg" required placeholder="How can we help?"></textarea></div>
+      </div>
+      <button type="submit" class="btn-primary">Send message</button>
+      <div class="success-box" id="k-success">Thanks for reaching out — we'll reply by email shortly.</div>
+    </form>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="logo" style="margin-bottom:14px;"><span class="mark">R</span>Reachline</div>
+        <p style="color:var(--text-muted); font-size:14px; max-width:280px;">One team planning and placing your advertising across Facebook, Google, YouTube, Instagram, and search.</p>
+      </div>
+      <div>
+        <h4>Company</h4>
+        <a data-page="about">About Us</a>
+        <a data-page="why">Why Us</a>
+        <a data-page="contact">Contact</a>
+      </div>
+      <div>
+        <h4>Get started</h4>
+        <a data-page="advertisers">For Advertisers</a>
+        <a data-page="creators">For Creators</a>
+        <a data-page="services">Services</a>
+      </div>
+      <div>
+        <h4>Legal</h4>
+        <a data-page="privacy">Privacy Policy</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 Reachline. All rights reserved.</span>
+      <span>Built for advertisers and creators alike.</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  const pages = document.querySelectorAll('.page');
+  const navLinks = document.querySelectorAll('[data-page]');
+  const navlinksWrap = document.getElementById('navlinks');
+  const oceanBg = document.getElementById('oceanBg');
+  const depthGauge = document.getElementById('depthGauge');
+  const depthLabel = document.getElementById('depthLabel');
+  const depthFill = document.getElementById('depthFill');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function goTo(id){
+    pages.forEach(p => p.classList.remove('active'));
+    const target = document.getElementById('page-' + id);
+    if(target){ target.classList.add('active'); }
+    document.querySelectorAll('.navlinks a').forEach(a => a.classList.toggle('active', a.dataset.page === id));
+    navlinksWrap.classList.remove('open');
+    window.scrollTo({top:0});
+    history.replaceState(null, '', '#' + id);
+    const onHome = id === 'home';
+    oceanBg.style.display = onHome ? 'block' : 'none';
+    depthGauge.style.display = onHome ? 'flex' : 'none';
+    document.body.style.background = onHome ? 'transparent' : '#020208';
+  }
+  navLinks.forEach(el => el.addEventListener('click', () => goTo(el.dataset.page)));
+  document.getElementById('menuBtn').addEventListener('click', () => navlinksWrap.classList.toggle('open'));
+
+  const initial = (location.hash || '#home').replace('#','');
+  goTo(document.getElementById('page-' + initial) ? initial : 'home');
+
+  // Ocean depth color stops: [percent, topColor, bottomColor, depthMeters, label]
+  const stops = [
+    [0.00, [190,239,255], [46,134,193], 0,   'Surface'],
+    [0.22, [28,163,163],  [20,108,148], 20,  'Shallow Waters'],
+    [0.48, [11,61,145],   [6,21,57],    200, 'Twilight Zone'],
+    [0.74, [5,8,20],      [2,2,8],      1000,'Midnight Zone'],
+    [1.00, [0,0,4],       [0,0,0],      4000,'The Abyss']
+  ];
+  function lerp(a,b,t){ return a + (b-a)*t; }
+  function lerpColor(c1,c2,t){
+    return [Math.round(lerp(c1[0],c2[0],t)), Math.round(lerp(c1[1],c2[1],t)), Math.round(lerp(c1[2],c2[2],t))];
+  }
+  function colorAt(percent){
+    for(let i=0;i<stops.length-1;i++){
+      const [p0, top0, bot0, d0] = stops[i];
+      const [p1, top1, bot1, d1, label1] = stops[i+1];
+      if(percent >= p0 && percent <= p1){
+        const t = (percent - p0) / (p1 - p0 || 1);
+        const top = lerpColor(top0, top1, t);
+        const bot = lerpColor(bot0, bot1, t);
+        const depth = Math.round(lerp(d0, d1, t));
+        const label = t > 0.5 ? label1 : stops[i][4];
+        return {top, bot, depth, label: stops[i+1][4]};
+      }
+    }
+    const last = stops[stops.length-1];
+    return {top:last[1], bot:last[2], depth:last[3], label:last[4]};
+  }
+
+  function updateOcean(){
+    if(!document.getElementById('page-home').classList.contains('active')) return;
+    const homeEl = document.getElementById('page-home');
+    const max = homeEl.scrollHeight - window.innerHeight;
+    const percent = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
+    const c = colorAt(percent);
+    oceanBg.style.background = `linear-gradient(to bottom, rgb(${c.top.join(',')}), rgb(${c.bot.join(',')}))`;
+    depthFill.style.height = (percent*100) + '%';
+    depthLabel.textContent = (percent > 0.97 ? 'The Abyss' : c.depth + 'm') + ' · ' + c.label;
+  }
+  let ticking = false;
+  window.addEventListener('scroll', () => {
+    if(!ticking){
+      requestAnimationFrame(() => { updateOcean(); ticking = false; });
+      ticking = true;
+    }
+  });
+  window.addEventListener('resize', updateOcean);
+  updateOcean();
+
+  // Particles for midnight & abyss zones
+  function spawnParticles(containerId, count){
+    const el = document.getElementById(containerId);
+    if(!el || reduceMotion) return;
+    for(let i=0;i<count;i++){
+      const p = document.createElement('div');
+      p.className = 'particle';
+      p.style.left = (Math.random()*100) + '%';
+      p.style.bottom = (Math.random()*20) + '%';
+      p.style.animationDelay = (Math.random()*14) + 's';
+      p.style.animationDuration = (10 + Math.random()*8) + 's';
+      el.appendChild(p);
+    }
+  }
+  spawnParticles('midnightParticles', 14);
+  spawnParticles('abyssParticles', 18);
+
+  // Chips + mock forms
+  document.querySelectorAll('#channelChips .chip').forEach(chip => {
+    chip.addEventListener('click', () => chip.classList.toggle('selected'));
+  });
+  function mockSubmit(formId, successId){
+    const form = document.getElementById(formId);
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      document.getElementById(successId).style.display = 'block';
+      form.reset();
+      document.querySelectorAll('#channelChips .chip.selected').forEach(c => c.classList.remove('selected'));
+    });
+  }
+  mockSubmit('advertiserForm', 'a-success');
+  mockSubmit('creatorForm', 'c-success');
+  mockSubmit('contactForm', 'k-success');
+</script>
+</body>
+</html>
